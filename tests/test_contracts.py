@@ -28,6 +28,15 @@ class HarnessTests(unittest.TestCase):
         b = HarnessSpec("research", "do not cite sources")
         self.assertNotEqual(a.digest, b.digest)
 
+    def test_nested_policy_is_immutable(self):
+        policy = {"tools": {"browser": True}}
+        spec = HarnessSpec("research", "cite sources", tool_policy=policy)
+        original = spec.digest
+        policy["tools"]["browser"] = False
+        self.assertEqual(spec.digest, original)
+        with self.assertRaises(TypeError):
+            spec.tool_policy["tools"]["browser"] = False
+
 
 class ApprovalTests(unittest.TestCase):
     def test_approval_is_bound_to_action_digest(self):
