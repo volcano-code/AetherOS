@@ -9,7 +9,7 @@ AetherOS is designed to integrate with NousResearch Hermes Agent.
 - Copyright: Copyright (c) 2025 Nous Research
 - Reference commit: `f7e2898aaefc8f967dbf7345e3999a65672fe60e`
 
-The current AetherOS bootstrap does not contain copied Hermes source files. If source is imported later, preserve the upstream LICENSE and applicable copyright notices.
+Hermes is included as a Git submodule at `vendor/hermes`, pinned to the reference commit in `UPSTREAM.md`. The submodule retains its upstream LICENSE, copyright notices, and Git history; AetherOS does not relicense those files.
 
 ## Dependency and asset audit
 
