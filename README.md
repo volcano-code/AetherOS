@@ -36,7 +36,7 @@ python -m compileall -q aetheros
 
 ## Repository relationship
 
-This repository was created as an empty standalone repository. It is **not** a GitHub fork and does not yet contain the Hermes upstream source tree. We retain a documented upstream reference and will integrate the pinned upstream source deliberately after baseline validation, preserving its MIT license and notices. Do not claim upstream code has been copied until that work is actually performed.
+This repository is a standalone project (not a GitHub Fork). Hermes is now pinned as a Git submodule at `vendor/hermes`; clone with `--recurse-submodules`. The submodule retains upstream Git history and its own MIT license. AetherOS original files remain separately licensed. See `UPSTREAM.md` and `docs/HERMES_INTEGRATION.md`.
 
 See:
 - [Architecture](docs/ARCHITECTURE.md)
