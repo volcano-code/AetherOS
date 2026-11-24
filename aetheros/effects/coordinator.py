@@ -149,7 +149,7 @@ class EffectCoordinator:
         if approval.action_digest != action_digest:
             raise EffectTransitionError("approval receipt is not bound to this exact action")
         if not approval.decided_by:
-            raise EffectTransitionError("approval receipt has no authenticated decision actor")
+            raise EffectTransitionError("approval receipt is missing a decision actor")
         self.store.append(
             stream_id=stream_id,
             event_type="effect.permit_issued",

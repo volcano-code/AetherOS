@@ -41,7 +41,7 @@ class CapabilityRegistry:
         if approval.status is ApprovalStatus.PENDING or approval.action_digest != expected_digest:
             raise CapabilityAdmissionError("review decision must be final and bound to the exact manifest digest")
         if not approval.decided_by:
-            raise CapabilityAdmissionError("review decision has no authenticated actor")
+            raise CapabilityAdmissionError("review decision is missing a decision actor")
         record = TrustRecord(
             plugin_id=manifest.plugin_id,
             version=manifest.version,
@@ -76,7 +76,7 @@ class CapabilityRegistry:
         if approval.status is not ApprovalStatus.APPROVED or approval.action_digest != expected_digest:
             raise CapabilityAdmissionError("pin migration requires approval bound to the new manifest digest")
         if not approval.decided_by:
-            raise CapabilityAdmissionError("migration approval has no authenticated actor")
+            raise CapabilityAdmissionError("migration approval is missing a decision actor")
         trust = self._trust.get((manifest.plugin_id, manifest.digest))
         if trust is None or not trust.approved:
             raise CapabilityAdmissionError("new manifest digest has not been approved")

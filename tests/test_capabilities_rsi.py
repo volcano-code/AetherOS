@@ -39,7 +39,7 @@ class CapabilityTests(unittest.TestCase):
             self.registry.pin("session-1", v2)
 
     def test_session_pin_requires_explicit_migration(self):
-        self.registry.review(self.v1, reviewer_id="admin", approve=True)
+        self.registry.review(self.v1, approval=self._approval(self.v1.digest))
         self.registry.pin("session-1", self.v1)
         v2 = CapabilityManifest("github-connector", "2.0.0", network_hosts=("api.github.com",))
         self.registry.review(v2, approval=self._approval(v2.digest))

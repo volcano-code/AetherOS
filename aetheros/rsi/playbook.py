@@ -185,7 +185,7 @@ def promote_playbook(
     if approval.status is not ApprovalStatus.APPROVED or approval.action_digest != expected_approval_digest:
         raise PermissionError("global Playbook promotion requires approval bound to this candidate and evaluation")
     if not approval.decided_by:
-        raise PermissionError("Playbook promotion approval has no authenticated actor")
+        raise PermissionError("Playbook promotion approval is missing a decision actor")
     evaluation_digest = playbook_evaluation_digest(evaluation)
     return PlaybookRelease(
         candidate.digest, candidate.version, approval.decided_by, decision, evaluation_digest,
