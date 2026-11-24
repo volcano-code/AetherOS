@@ -7,6 +7,7 @@ from aetheros.effects import EffectCoordinator, EffectStatus, EffectTransitionEr
 from aetheros.ledger import ConcurrentAppendError, LedgerIntegrityError, SQLiteEventStore
 from aetheros.ledger.projections import replay_task_projection
 from aetheros.tasks.models import TaskState
+from aetheros.security.approval import ApprovalRequest, decide
 
 
 class LedgerTests(unittest.TestCase):
@@ -82,9 +83,11 @@ class EffectTests(unittest.TestCase):
 
     def _permitted(self):
         self.effects.record_intent(**self.base, idempotency_key="idem-001")
+        request = ApprovalRequest("approval-1", "user-1", "sha256:action-001")
+        approval = decide(request, actor_id="user-1", action_digest="sha256:action-001", approve=True)
         return self.effects.issue_permit(
             stream_id="task-1", effect_id="github-issue-1",
-            action_digest="sha256:action-001", permit_id="permit-1", approved_by="user-1",
+            action_digest="sha256:action-001", permit_id="permit-1", approval=approval,
         )
 
     def test_one_shot_permit_and_settlement(self):
@@ -105,12 +108,23 @@ class EffectTests(unittest.TestCase):
         )
         self.assertEqual(settled.status, EffectStatus.SUCCEEDED)
 
-    def test_wrong_action_digest_cannot_receive_or_consume_permit(self):
+    def test_pending_approval_cannot_issue_a_permit(self):
         self.effects.record_intent(**self.base)
+        request = ApprovalRequest("approval-pending", "user-1", "sha256:action-001")
         with self.assertRaises(EffectTransitionError):
             self.effects.issue_permit(
-                stream_id="task-1", effect_id="github-issue-1", action_digest="sha256:other",
-                permit_id="permit-1", approved_by="user-1",
+                stream_id="task-1", effect_id="github-issue-1", action_digest="sha256:action-001",
+                permit_id="permit-1", approval=request,
+            )
+
+    def test_wrong_action_digest_cannot_receive_or_consume_permit(self):
+        self.effects.record_intent(**self.base)
+        request = ApprovalRequest("approval-1", "user-1", "sha256:other")
+        approval = decide(request, actor_id="user-1", action_digest="sha256:other", approve=True)
+        with self.assertRaises(EffectTransitionError):
+            self.effects.issue_permit(
+                stream_id="task-1", effect_id="github-issue-1", action_digest="sha256:action-001",
+                permit_id="permit-1", approval=approval,
             )
 
     def test_unknown_outcome_is_never_automatically_replayed(self):
@@ -151,9 +165,11 @@ class EffectTests(unittest.TestCase):
             effects.record_intent(
                 stream_id="task-r", effect_id="effect-r", action_digest="sha256:r", actor_id="agent",
             )
+            request = ApprovalRequest("approval-r", "user", "sha256:r")
+            approval = decide(request, actor_id="user", action_digest="sha256:r", approve=True)
             effects.issue_permit(
                 stream_id="task-r", effect_id="effect-r", action_digest="sha256:r",
-                permit_id="permit-r", approved_by="user",
+                permit_id="permit-r", approval=approval,
             )
             effects.begin_dispatch(
                 stream_id="task-r", effect_id="effect-r", action_digest="sha256:r",

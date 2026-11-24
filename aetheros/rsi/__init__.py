@@ -7,11 +7,14 @@ from .playbook import (
     PlaybookRelease,
     SessionLearning,
     evaluate_playbook,
+    playbook_evaluation_digest,
+    playbook_promotion_digest,
     promote_playbook,
 )
 
 __all__ = [
     "Evaluation", "PlaybookCandidate", "PlaybookEvaluation", "PlaybookRelease",
     "PromotionDecision", "SessionLearning", "evaluate_playbook",
-    "evaluate_promotion", "promote_playbook",
+    "evaluate_promotion", "playbook_evaluation_digest", "playbook_promotion_digest",
+    "promote_playbook",
 ]

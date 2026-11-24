@@ -11,6 +11,7 @@ from dataclasses import replace
 from typing import Literal
 
 from aetheros.ledger import GENESIS_HASH, SQLiteEventStore
+from aetheros.security.approval import ApprovalRequest, ApprovalStatus
 from .models import EffectSnapshot, EffectStatus
 
 ReconciliationOutcome = Literal["succeeded", "failed", "not_applied"]
@@ -134,24 +135,31 @@ class EffectCoordinator:
 
     def issue_permit(
         self, *, stream_id: str, effect_id: str, action_digest: str,
-        permit_id: str, approved_by: str,
+        permit_id: str, approval: ApprovalRequest,
     ) -> EffectSnapshot:
         current, last_hash = _read(self.store, stream_id, effect_id)
         if current is None or current.status is not EffectStatus.INTENT_RECORDED:
             raise EffectTransitionError("permit can only be issued for a fresh intent")
         if current.action_digest != action_digest:
             raise EffectTransitionError("action digest mismatch")
-        if not permit_id.strip() or not approved_by.strip():
-            raise ValueError("permit_id and approved_by must be non-empty")
+        if not permit_id.strip():
+            raise ValueError("permit_id must be non-empty")
+        if approval.status is not ApprovalStatus.APPROVED:
+            raise EffectTransitionError("a permit requires an approved decision receipt")
+        if approval.action_digest != action_digest:
+            raise EffectTransitionError("approval receipt is not bound to this exact action")
+        if not approval.decided_by:
+            raise EffectTransitionError("approval receipt has no authenticated decision actor")
         self.store.append(
             stream_id=stream_id,
             event_type="effect.permit_issued",
-            actor_id=approved_by,
+            actor_id=approval.decided_by,
             payload={
                 "effect_id": effect_id,
                 "action_digest": action_digest,
                 "permit_id": permit_id,
-                "approved_by": approved_by,
+                "approved_by": approval.decided_by,
+                "approval_id": approval.request_id,
             },
             expected_previous_hash=last_hash,
         )

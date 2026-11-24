@@ -4,9 +4,10 @@ from dataclasses import replace
 from aetheros.capabilities import (
     CapabilityAdmissionError, CapabilityManifest, CapabilityRegistry,
 )
+from aetheros.security.approval import ApprovalRequest, decide
 from aetheros.rsi import (
     PlaybookCandidate, PlaybookEvaluation, PromotionDecision, SessionLearning,
-    evaluate_playbook, promote_playbook,
+    evaluate_playbook, playbook_promotion_digest, promote_playbook,
 )
 
 
@@ -18,12 +19,16 @@ class CapabilityTests(unittest.TestCase):
             filesystem_read=("workspace/reports/*",),
         )
 
+    def _approval(self, digest):
+        request = ApprovalRequest("review-" + digest[-6:], "admin", "sha256:" + digest)
+        return decide(request, actor_id="admin", action_digest="sha256:" + digest, approve=True)
+
     def test_unreviewed_manifest_cannot_be_pinned(self):
         with self.assertRaises(CapabilityAdmissionError):
             self.registry.pin("session-1", self.v1)
 
     def test_trust_is_bound_to_exact_manifest_digest(self):
-        self.registry.review(self.v1, reviewer_id="admin", approve=True)
+        self.registry.review(self.v1, approval=self._approval(self.v1.digest))
         pin = self.registry.pin("session-1", self.v1)
         self.assertEqual(pin.manifest_digest, self.v1.digest)
         v2 = CapabilityManifest(
@@ -37,10 +42,10 @@ class CapabilityTests(unittest.TestCase):
         self.registry.review(self.v1, reviewer_id="admin", approve=True)
         self.registry.pin("session-1", self.v1)
         v2 = CapabilityManifest("github-connector", "2.0.0", network_hosts=("api.github.com",))
-        self.registry.review(v2, reviewer_id="admin", approve=True)
+        self.registry.review(v2, approval=self._approval(v2.digest))
         with self.assertRaises(CapabilityAdmissionError):
             self.registry.pin("session-1", v2)
-        migrated = self.registry.migrate_pin("session-1", v2, approved_by="admin")
+        migrated = self.registry.migrate_pin("session-1", v2, approval=self._approval(v2.digest))
         self.assertEqual(migrated.version, "2.0.0")
 
 
@@ -78,19 +83,24 @@ class PlaybookTests(unittest.TestCase):
         self.assertEqual(evaluate_playbook(ood_bad), PromotionDecision.REJECT)
 
     def test_global_playbook_promotion_requires_human_approval(self):
+        action_digest = playbook_promotion_digest(self.candidate, self.good)
+        pending = ApprovalRequest("playbook-pending", "admin", action_digest)
         with self.assertRaises(PermissionError):
-            promote_playbook(self.candidate, self.good, reviewer_id="admin", human_approved=False)
-        release = promote_playbook(
-            self.candidate, self.good, reviewer_id="admin", human_approved=True,
-        )
+            promote_playbook(self.candidate, self.good, approval=pending)
+        request = ApprovalRequest("playbook-approved", "admin", action_digest)
+        approval = decide(request, actor_id="admin", action_digest=action_digest, approve=True)
+        release = promote_playbook(self.candidate, self.good, approval=approval)
         self.assertEqual(release.candidate_digest, self.candidate.digest)
         self.assertEqual(release.approved_by, "admin")
         self.assertEqual(release.benchmark_digest, "sha256:benchmark")
 
     def test_evaluation_must_be_bound_to_candidate_digest(self):
         bad = replace(self.good, candidate_digest="sha256:other")
+        action_digest = playbook_promotion_digest(self.candidate, self.good)
+        request = ApprovalRequest("playbook-bad", "admin", action_digest)
+        approval = decide(request, actor_id="admin", action_digest=action_digest, approve=True)
         with self.assertRaises(ValueError):
-            promote_playbook(self.candidate, bad, reviewer_id="admin", human_approved=True)
+            promote_playbook(self.candidate, bad, approval=approval)
 
     def test_candidate_requires_multiple_source_sessions(self):
         with self.assertRaises(ValueError):

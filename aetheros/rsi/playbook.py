@@ -7,6 +7,7 @@ import hashlib
 import json
 
 from .gates import PromotionDecision
+from aetheros.security.approval import ApprovalRequest, ApprovalStatus
 
 
 @dataclass(frozen=True, slots=True)
@@ -124,35 +125,7 @@ def evaluate_playbook(
     return PromotionDecision.PROMOTE
 
 
-@dataclass(frozen=True, slots=True)
-class PlaybookRelease:
-    candidate_digest: str
-    version: str
-    approved_by: str
-    decision: PromotionDecision
-    evaluation_digest: str
-    benchmark_digest: str
-    ood_dataset_digest: str
-    model_route: str
-    budget_profile: str
-
-
-def promote_playbook(
-    candidate: PlaybookCandidate,
-    evaluation: PlaybookEvaluation,
-    *,
-    reviewer_id: str,
-    human_approved: bool,
-) -> PlaybookRelease:
-    if evaluation.candidate_digest != candidate.digest:
-        raise ValueError("evaluation is not bound to this exact Playbook candidate digest")
-    if evaluation.source_sessions < len(set(candidate.source_session_ids)):
-        raise ValueError("evaluation source-session count is smaller than candidate provenance")
-    decision = evaluate_playbook(evaluation)
-    if decision is not PromotionDecision.PROMOTE:
-        raise ValueError(f"candidate did not pass promotion gates: {decision}")
-    if not human_approved or not reviewer_id.strip():
-        raise PermissionError("global Playbook promotion requires explicit human approval")
+def playbook_evaluation_digest(evaluation: PlaybookEvaluation) -> str:
     evaluation_body = {
         "candidate_digest": evaluation.candidate_digest,
         "baseline_harness_digest": evaluation.baseline_harness_digest,
@@ -171,9 +144,51 @@ def promote_playbook(
         "candidate_safety_violations": evaluation.candidate_safety_violations,
     }
     encoded = json.dumps(evaluation_body, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-    evaluation_digest = hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def playbook_promotion_digest(candidate: PlaybookCandidate, evaluation: PlaybookEvaluation) -> str:
+    if evaluation.candidate_digest != candidate.digest:
+        raise ValueError("evaluation is not bound to this exact Playbook candidate digest")
+    payload = {"candidate_digest": candidate.digest, "evaluation_digest": playbook_evaluation_digest(evaluation)}
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return "sha256:" + hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+@dataclass(frozen=True, slots=True)
+class PlaybookRelease:
+    candidate_digest: str
+    version: str
+    approved_by: str
+    decision: PromotionDecision
+    evaluation_digest: str
+    benchmark_digest: str
+    ood_dataset_digest: str
+    model_route: str
+    budget_profile: str
+
+
+def promote_playbook(
+    candidate: PlaybookCandidate,
+    evaluation: PlaybookEvaluation,
+    *,
+    approval: ApprovalRequest,
+) -> PlaybookRelease:
+    if evaluation.candidate_digest != candidate.digest:
+        raise ValueError("evaluation is not bound to this exact Playbook candidate digest")
+    if evaluation.source_sessions < len(set(candidate.source_session_ids)):
+        raise ValueError("evaluation source-session count is smaller than candidate provenance")
+    decision = evaluate_playbook(evaluation)
+    if decision is not PromotionDecision.PROMOTE:
+        raise ValueError(f"candidate did not pass promotion gates: {decision}")
+    expected_approval_digest = playbook_promotion_digest(candidate, evaluation)
+    if approval.status is not ApprovalStatus.APPROVED or approval.action_digest != expected_approval_digest:
+        raise PermissionError("global Playbook promotion requires approval bound to this candidate and evaluation")
+    if not approval.decided_by:
+        raise PermissionError("Playbook promotion approval has no authenticated actor")
+    evaluation_digest = playbook_evaluation_digest(evaluation)
     return PlaybookRelease(
-        candidate.digest, candidate.version, reviewer_id, decision, evaluation_digest,
+        candidate.digest, candidate.version, approval.decided_by, decision, evaluation_digest,
         evaluation.benchmark_digest, evaluation.ood_dataset_digest, evaluation.model_route,
         evaluation.budget_profile,
     )
