@@ -20,6 +20,6 @@ jobs:
       - name: Verify pinned Hermes submodule metadata
         run: bash scripts/verify_upstream_pin.sh
       - name: Compile AetherOS
-        run: python -m compileall -q aetheros
+        run: python -m compileall -q aetheros scripts/aetheros_hermes_smoke.py
       - name: AetherOS contract and failure-path tests
         run: python -m unittest discover -s tests -v

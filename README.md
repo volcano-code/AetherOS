@@ -4,7 +4,7 @@
 
 AetherOS is a Personal Agent control plane built around Hermes Agent as its sole execution runtime. It adds durable cross-session task orchestration, evidence-first external-effect governance, versioned Harness management, and controlled cross-task Playbook improvement.
 
-> Status: Phase 0.3 control-plane contracts. The Event Ledger and Effect Coordinator are implemented and tested as standalone primitives; the Effect Coordinator is not yet wired into live Hermes tool dispatch. The capability registry is currently in-memory. AetherOS is not a GitHub Fork of Hermes.
+> Status: Phase 1 integration slice. A subprocess adapter now invokes the pinned Hermes AIAgent public facade; the ledger-backed TaskOrchestrator correlates task, execution, Hermes session, and Harness identities. Model-visible toolsets remain disabled until the Effect Kernel is wired into Hermes tool dispatch. The capability registry is currently in-memory. AetherOS is not a GitHub Fork of Hermes.
 
 ## Frozen project decisions
 
@@ -32,7 +32,8 @@ AetherOS is a Personal Agent control plane built around Hermes Agent as its sole
 - aetheros/harness: immutable, content-addressed Harness specifications.
 - aetheros/rsi: baseline promotion gates and two-level Playbook evolution.
 - aetheros/security: action-digest-bound approval contract.
-- aetheros/integrations/hermes: runtime adapter boundary.
+- aetheros/integrations/hermes: isolated subprocess adapter and worker around Hermes AIAgent.
+- aetheros/tasks/orchestrator.py: ledger-backed task execution and recovery.
 - tests: deterministic, network-free contract and failure-path tests.
 
 ## Development
@@ -47,6 +48,10 @@ python -m unittest discover -s tests -v
 ## Repository relationship
 
 Hermes is pinned as a Git submodule at vendor/hermes; clone with --recurse-submodules. The submodule retains its upstream Git history and MIT license. AetherOS original files remain separately licensed. See UPSTREAM.md, docs/HERMES_INTEGRATION.md, and THIRD_PARTY_NOTICES.md.
+
+## Phase 1 smoke test
+
+See [Phase 1](docs/PHASE_1.md) for deterministic tests and the explicit live Hermes smoke command. The live command can incur model-provider charges; toolsets are disabled in this integration slice.
 
 ## Architecture and roadmap
 

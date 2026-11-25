@@ -11,3 +11,6 @@ build/
 .coverage
 htmlcov/
 artifacts/private/
+runs/*.sqlite
+runs/*.sqlite-shm
+runs/*.sqlite-wal

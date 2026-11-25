@@ -1,1 +1,25 @@
-"""Hermes adapter boundary. Concrete client binding is implemented in Phase 1."""
+"""Hermes Agent runtime integration."""
+
+from .adapter import (
+    HermesExecutionUnknown,
+    HermesProtocolError,
+    HermesRunRequest,
+    HermesRunResult,
+    HermesRuntime,
+    HermesRuntimeAdapter,
+    HermesRuntimeConfig,
+    HermesRuntimeError,
+    ModelRoute,
+)
+
+__all__ = [
+    "HermesExecutionUnknown",
+    "HermesProtocolError",
+    "HermesRunRequest",
+    "HermesRunResult",
+    "HermesRuntime",
+    "HermesRuntimeAdapter",
+    "HermesRuntimeConfig",
+    "HermesRuntimeError",
+    "ModelRoute",
+]

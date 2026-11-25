@@ -4,6 +4,9 @@
 
 ### Added
 - Initial AetherOS Phase 0 repository scaffold.
+- Phase 1 isolated subprocess adapter for the pinned Hermes `run_agent.AIAgent` public facade.
+- Ledger-backed TaskOrchestrator correlating task, execution, Hermes session, and Harness digests.
+- Explicit live Hermes smoke script; model-visible toolsets remain disabled until Effect Kernel dispatch integration.
 - Task state transition contract.
 - Immutable, content-addressed Harness specification.
 - Action-digest-bound human approval contract.

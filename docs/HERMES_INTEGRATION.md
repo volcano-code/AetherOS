@@ -47,6 +47,14 @@ Do not run git submodule update --remote in routine development. Update the pinn
 3. Upstream checks and AetherOS integration tests.
 4. License/SBOM changes.
 
+## Phase 1 adapter
+
+AetherOS invokes the public `run_agent.AIAgent` facade in an isolated child process using the configured Hermes PM Python interpreter. The child calls `AIAgent.run_conversation(..., task_id=execution_id)` and emits a small JSON event protocol containing the Hermes session ID and terminal response. Hermes stdout is redirected away from the protocol stream.
+
+The first integration deliberately passes `enabled_toolsets=[]`, `skip_memory=True`, and `skip_context_files=True`. This is a controlled model-only execution path; no external tools are exposed until the AetherOS Effect Kernel is integrated at the actual Hermes tool dispatch boundary. Model routing is selected from an operator-configured allowlist, not from arbitrary Harness input.
+
+See [Phase 1](PHASE_1.md) for configuration and the explicit live smoke command.
+
 ## Phase 0 validation
 
-The pinned commit is a source provenance pin. AetherOS CI verifies the gitlink metadata and does not claim to build Hermes or validate the full upstream test suite. Those checks must be run from vendor/hermes in a separately provisioned Hermes developer environment.
+The pinned commit is a source provenance pin. AetherOS CI verifies the gitlink metadata and runs deterministic adapter tests against a fake Hermes checkout; it does not claim to build Hermes or validate the full upstream test suite. Those checks and the live smoke test must be run from `vendor/hermes` in a separately provisioned Hermes developer environment.
