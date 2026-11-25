@@ -79,7 +79,7 @@ Session learning stays local to its source session. Cross-task Playbook candidat
 
 The Phase 0.3 contracts provide a SQLite event store, hash verification, deterministic task projection, effect state machine, one-shot permit semantics, exact-digest capability review/pinning, and two-level Playbook promotion gates.
 
-The Capability Registry is currently in-memory. The Effect Coordinator is a control-plane contract and is not yet wired into live Hermes tool dispatch. No production multi-user service, external API adapter, OS sandbox, or live RSI worker is claimed at this stage.
+The Phase 1 integration slice adds an isolated subprocess adapter around the pinned Hermes `run_agent.AIAgent` public facade and a ledger-backed TaskOrchestrator. Task, execution, Hermes session, and Harness identities are correlated in the ledger. Model-visible toolsets are deliberately disabled in this first slice; the Effect Coordinator is not yet wired into live Hermes tool dispatch. The Capability Registry is currently in-memory. No production multi-user service, external API connector, OS sandbox, or live RSI worker is claimed.
 
 ## Deferred decisions
 

@@ -17,11 +17,14 @@
 - Complete selected dependency/SBOM/license audit.
 
 ### Phase 1 — Hermes integration and ledger-backed task core
-- Implement the real Hermes Runtime Adapter through supported public interfaces.
-- Establish task ID, AetherOS execution ID, and Hermes session ID correlation.
-- Integrate SQLite Event Ledger into task lifecycle.
-- Rebuild task state and execution timeline from verified event streams.
-- Add compare-and-append concurrency protection and crash/reopen tests.
+- [x] Implement an isolated Hermes Runtime Adapter around the pinned public `run_agent.AIAgent` facade.
+- [x] Establish task ID, AetherOS execution ID, Hermes session ID, and Harness digest correlation.
+- [x] Integrate the SQLite Event Ledger into task lifecycle.
+- [x] Rebuild task state from verified event streams.
+- [x] Add deterministic fake-Hermes subprocess tests and orphaned-task recovery.
+- [ ] Run the explicit live Hermes smoke test in the user's configured Hermes environment.
+- [ ] Record Hermes upstream baseline test results.
+- [ ] Integrate the Effect Kernel into actual Hermes tool dispatch before enabling any model-visible tools.
 - Do not duplicate Hermes transcript or model/tool loop.
 
 ### Phase 1.5 — Evidence & Effect Kernel

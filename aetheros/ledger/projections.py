@@ -1,4 +1,4 @@
-"""Example task projection rebuilt only from verified ledger events."""
+"""Task projections rebuilt only from verified ledger events."""
 
 from __future__ import annotations
 
@@ -29,6 +29,7 @@ def reduce_task_projection(state: TaskProjection, event: LedgerEvent) -> TaskPro
             state=TaskState.CREATED,
             created_at=occurred_at,
             updated_at=occurred_at,
+            harness_digest=str(payload["harness_digest"]) if payload.get("harness_digest") else None,
         )
         return TaskProjection(task=task, last_sequence=event.sequence)
     if event.event_type == "task.state_changed":
